@@ -1,0 +1,108 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melyñal Trading Cosmetics E-Commerce</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    
+    <header>
+        <div class="logo">
+            <a href="{{url_for('index')}}">
+                <img src="{{ url_for('static', filename='images/image6.jpg') }}" alt="Melynal Logo">
+                Melyñal Trading
+            </a>
+        </div>
+
+        <nav>
+            <ul>
+                {% if g.user %}
+                    {% if g.is_admin %}
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+                        <li class="logout"><a href="{{ url_for('logout') }}">Logout ({{ g.user.username }})</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li><a href="{{ url_for('cart') }}">Cart</a></li> 
+                        <li><a href="{{ url_for('order_history') }}">Orders</a></li>
+                        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                        <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                        <li class="logout"><a href="{{ url_for('logout') }}">Logout ({{ g.user.username }})</a></li>
+                    {% endif %}
+                {% else %}
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('about_page') }}">About</a></li> 
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
+                    
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <h3>Melyñal Trading</h3>
+                    <p>Your trusted source for high-quality cosmetics and skincare products.
+                    Bringing beauty and confidence right to your doorstep. 💄✨</p>
+                </div>
+
+                <div>
+                    <h4>Quick Links</h4>
+                    <ul style="list-style:none; padding:0; margin:0;">
+                        {% if g.user %}
+                            {% if g.is_admin %}
+                                <li><a href="{{ url_for('index') }}">Home</a></li>
+                                <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+                            {% else %}
+                                <li><a href="{{ url_for('index') }}">Home</a></li>
+                                <li><a href="{{ url_for('cart') }}">Cart</a></li> 
+                                <li><a href="{{ url_for('order_history') }}">Orders</a></li>
+                                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                            {% endif %}
+                        {% else %}
+                            <li><a href="{{ url_for('index') }}">Home</a></li>
+                            <li><a href="{{ url_for('login') }}">Login</a></li>
+                            <li><a href="{{ url_for('register') }}">Register</a></li>
+                           
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4>Contact Us</h4>
+                    <p>📍 Pob. City of Naga, Cebu, Philippines</p>
+                    <p>📧 support@melynaltrading.com</p>
+                    <p>☎️ +63 9123 456 789</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 Melyñal Trading. All rights reserved. &trade;</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id = "chatbot-container">
+        <div id = "chatbot-toggle">💬</div>
+        <div id = "chatbot-box" class="hidden">
+            <div id = "chatbot-header">Melyñal Chat</div>
+            <div id = "chatbot-messages"></div>
+            <div id = "chatbot-input">
+                <input type="text" id="user-input" placeholder="Ask about Melyñal Trading...">
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+</html>

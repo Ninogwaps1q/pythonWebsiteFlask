@@ -1,0 +1,33 @@
+document.getElementById("chatbot-toggle").onclick = () => {
+  document.getElementById("chatbot-box").classList.toggle("hidden");
+};
+
+document.getElementById("send-btn").onclick = async () => {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  const chatMessages = document.getElementById("chatbot-messages");
+
+  addMessage(message, "user-msg");
+  input.value = "";
+
+  const response = await fetch("/chatbot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  const data = await response.json();
+  addMessage(data.reply, "bot-msg");
+};
+
+function addMessage(text, type) {
+  const chatMessages = document.getElementById("chatbot-messages");
+  const msg = document.createElement("div");
+  msg.className = type; 
+  msg.textContent = text;
+  chatMessages.appendChild(msg);
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+};

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="page-title">My Purchases</h2>
+
+{% if orders %}
+<div class="orders-list">
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="order-header">
+            <span class="order-id">Order #{{ order.order_id }}</span>
+            <span class="order-date">{{ order.order_date }}</span>
+        </div>
+
+        <div class="order-content">
+            <img src="{{ url_for('static', filename='uploads/' + (order.image or 'default.jpg')) }}"
+                 alt="{{ order.product_name }}" class="order-product-image">
+            
+            <div class="order-details">
+                <p class="order-product-name">{{ order.product_name }}</p>
+                <p class="order-quantity">Quantity: {{ order.quantity }}</p>
+            </div>
+
+            <div class="order-price">
+                <p>₱{{ '%.2f' | format(order.total_price) }}</p>
+            </div>
+        </div>
+
+        <div class="order-footer">
+            <span>Thank you for shopping with <strong>Melynal Trading</strong>!</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-orders">
+    <img src="{{ url_for('static', filename='images/empty_cart.png') }}" alt="No Orders" class="empty-orders-img">
+    <p class="empty-orders-text">You have not placed any orders yet.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-shop-now">Shop Now</a>
+</div>
+{% endif %}
+{% endblock %}

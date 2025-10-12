@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="cart-section container">
+    <h2 class="page-title">Your Shopping Cart</h2>
+
+    {% if cart_products %}
+    <div class="cart-table-wrapper">
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product_id, item in cart_products.items() %}
+                <tr style="background-color: #eee;">
+                    <td class="cart-product">
+                        <img src="{{ url_for('static', filename='uploads/' + (item.image or 'default.jpg')) }}" alt="{{ item.name }}">
+                        <span>{{ item.name }}</span>
+                    </td>
+                    <td>₱{{ '%.2f' | format(item.price) }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_cart', product_id=product_id) }}" class="cart-quantity-form">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
+                            <button type="submit" class="btn btn-update">Update</button>
+                        </form>
+                    </td>
+                    <td>₱{{ '%.2f' | format(item.subtotal) }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_cart', product_id=product_id) }}">
+                            <input type="hidden" name="quantity" value="0">
+                            <button type="submit" class="btn btn-remove">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="cart-total">
+        <p>Total: <strong>₱{{ '%.2f' | format(total_cart_price) }}</strong></p>
+        <form method="POST" action="{{ url_for('place_order') }}">
+            <button type="submit" class="btn btn-primary btn-checkout">Proceed to Checkout</button>
+        </form>
+    </div>
+
+    {% else %}
+    <p class="empty-cart">Your cart is empty. <a href="{{ url_for('index') }}">Start shopping now!</a></p>
+    {% endif %}
+</section>
+
+{% endblock %}

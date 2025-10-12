@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Edit Product{% endblock %}
+
+{% block content %}
+<div class="admin-form">
+    <h2>Edit Product - {{ product.product_name }}</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <div class="form-group">
+            <label for="product_name">Product Name:</label>
+            <input type="text" id="product_name" name="product_name" 
+                   value="{{ product.product_name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="price">Price (₱):</label>
+            <input type="number" id="price" name="price" step="0.01" min="0.01" 
+                   value="{{ '%.2f' | format(product.price) }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="stock">Stock Quantity:</label>
+            <input type="number" id="stock" name="stock" min="0" 
+                   value="{{ product.stock }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="5">{{ product.description }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Current Product Image:</label><br>
+            <img src="{{ url_for('static', filename='uploads/' + (product.image or 'default.jpg')) }}" 
+                 alt="{{ product.product_name }}" class="product-thumb">
+        </div>
+
+        <div class="form-group">
+            <label for="image">Change Image (optional, PNG, JPG, GIF):</label>
+            <input type="file" id="image" name="image" accept=".png, .jpg, .jpeg, .gif">
+        </div>
+
+        <button type="submit" class="btn btn-submit">Update Product</button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-cancel">Cancel</a>
+
+    </form>
+</div>
+{% endblock %}

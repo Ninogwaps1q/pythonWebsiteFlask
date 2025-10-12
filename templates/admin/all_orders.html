@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}All Customer Orders{% endblock %}
+
+{% block content %}
+<section class="orders-section">
+    <div class="container">
+        <h2 class="section-title">🧾 All Customer Orders</h2>
+
+        {% if orders %}
+        <div class="orders-card">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Total Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="bold">#{{ order.order_id }}</td>
+
+                        <td>
+                            <strong>{{ order.user.firstname }} {{ order.user.lastname }}</strong><br>
+                            <small>{{ order.user.email }}</small>
+                        </td>
+
+                        <td>{{ order.product.product_name }}</td>
+
+                        <td class="center">{{ order.quantity }}</td>
+
+                        <td class="right">₱{{ '%.2f' | format(order.total_price) }}</td>
+
+                        <td class="center">{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="no-orders">No orders have been placed yet.</p>
+        {% endif %}
+
+        <div class="btn-wrapper">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-back">&larr; Back to Dashboard</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

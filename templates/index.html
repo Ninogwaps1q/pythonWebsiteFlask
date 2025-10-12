@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h2>🛍️ Melyñal Products</h2>
+
+        <form method="GET" action="{{ url_for('index') }}" class="search-form">
+            <input type="text" name="search" placeholder="Search products..."
+                   value="{{ search_query }}">
+            <button type="submit">Search</button>
+            {% if search_query %}
+            <a href="{{ url_for('index') }}" class="clear-btn">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</section>
+
+<section class="products-section">
+    <div class="container products-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product.product_id) }}">
+                <div class="product-image">
+                    <img src="{{ url_for('static', filename='uploads/' + (product.image or 'default.jpg')) }}"
+                         alt="{{ product.product_name }}">
+                </div>
+                <div class="product-info">
+                    <h3>{{ product.product_name }}</h3>
+                    <p class="price">₱{{ '%.2f' | format(product.price) }}</p>
+                    <p class="stock">Stock: {{ product.stock }}</p>
+                </div>
+            </a>
+
+            {% if g.user and not g.is_admin %}
+                <div class="product-actions">
+                    {% if product.stock > 0 %}
+                        <form method="POST" action="{{ url_for('add_to_cart', product_id=product.product_id) }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="cart-btn">🛒 Cart</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('buy_now', product_id=product.product_id) }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="buy-btn">💳 Buy</button>
+                        </form>
+                    {% else %}
+                        <button disabled class="out-of-stock-btn">Out of Stock</button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="no-products">No products found.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+{% endblock %}

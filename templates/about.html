@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="about-section">
+    <div class="about-header">
+        <img src="{{ url_for('static', filename='images/image6.jpg') }}" alt="Melyñal Logo" class="about-logo">
+        <h1>About Melyñal Trading</h1>
+        <p class="about-tagline">Your Glow, Our Commitment 💖</p>
+    </div>
+
+    <div class="about-content">
+        <p>
+            <span class="highlight">Melyñal Trading</span> 
+            is a trusted name in the Philippine beauty and skincare industry, offering high-quality and affordable products designed for everyday self-care. With a focus on natural ingredients and proven formulations, we provide effective skincare solutions that cater to the diverse needs of Filipinos.
+        </p>
+
+        <p>
+            Founded by <span class="highlight">Manilyn Cavalida</span> in 2015, 
+            Melyñal Trading started as a small online business. Her passion for skincare was inspired by her own struggle with skin issues, driving her to create effective beauty products. Through dedication and hard work, the brand rapidly grew, gaining popularity through social media and word-of-mouth recommendations.
+        </p>
+
+        <p>
+            Today, Melyñal Trading offers a wide range of products, including 
+            <span class="highlight">facial sets</span>, 
+            <span class="highlight">body scrubs</span>, 
+            <span class="highlight">whitening lotions</span>, and 
+            <span class="highlight">deodorants</span>. 
+            The company continues to expand nationwide, making quality skincare accessible to everyone.
+        </p>
+
+        <p>
+            Committed to customer satisfaction and innovation, Melyñal Trading strives to empower individuals by enhancing their beauty and boosting their confidence through reliable and affordable skincare products.
+        </p>
+
+        <div class="about-footer">
+            <p>Melyñal Trading – Your Glow, Our Commitment!</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

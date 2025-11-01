@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Buy Now - {{ product.product_name }}{% endblock %}
+
+{% block content %}
+<div class="buy-now-container">
+    <div class="buy-box">
+        <div class="left-section">
+            <img src="{{ url_for('static', filename='uploads/' + (product.image or 'default.jpg')) }}" 
+                class="product-img" 
+                alt="{{ product.product_name }}">
+        </div>
+
+        <div class="right-section">
+            <h2 class="product-title">{{ product.product_name }}</h2>
+            <p class="product-price">₱{{ '%.2f' | format(product.price) }}</p>
+            <p class="product-desc">{{ product.description }}</p>
+            <p class="product-stock"><strong>Available Stock:</strong> {{ product.stock }}</p>
+
+            <form method="POST" action="{{ url_for('buy_now', product_id=product.product_id) }}" onsubmit="return validateForm()">
+                <label class="quantity-label"><strong>Quantity:</strong></label>
+                <div class="quantity">
+                    <button type="button" onclick="adjustQuantity(-1)">−</button>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" onchange="updateTotal()" required>
+                    <button type="button" onclick="adjustQuantity(1)">+</button>
+                </div>
+
+                <label><strong>Delivery Address:</strong></label>
+                <textarea name="delivery_address" required placeholder="Enter delivery address">{{ g.user.address or '' }}</textarea>
+
+                <label><strong>Payment Method:</strong></label>
+                <select name="payment_method" required onchange="togglePaymentFields()">
+                    <option value="">Select Payment Method</option>
+                    <option value="Cash on Delivery">Cash on Delivery</option>
+                    <option value="GCash">GCash</option>
+                    <option value="Credit/Debit Card">Credit/Debit Card</option>
+                </select>
+
+                <div id="gcash-image" style="display:none; margin-top:10px;">
+                    <img src="{{ url_for('static', filename='images/payment.png') }}" alt="GCash Payment" style="max-width:200px;">
+                </div>
+
+                <div id="card-info" style="display:none; margin-top:10px;">
+                    <label>Name on Card:</label>
+                    <input type="text" name="name_on_card" placeholder="Cardholder Name">
+                    <label>Card Number:</label>
+                    <input type="text" name="card_number" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" oninput="formatCardNumber(this)">
+                </div>
+
+                <p class="total-display">
+                    <strong>Total:</strong> ₱<span id="total-price">{{ '%.2f' | format(product.price) }}</span>
+                </p>
+
+                <button type="submit" class="buys_button">💳 Confirm Purchase</button>
+            </form>
+
+            <div class="back-link">
+                <a href="{{ url_for('index') }}">← Continue Shopping</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const price = {{ product.price }};
+const maxStock = {{ product.stock }};
+const quantityInput = document.getElementById('quantity');
+const totalPriceSpan = document.getElementById('total-price');
+
+function adjustQuantity(change) {
+    let value = parseInt(quantityInput.value) || 1;
+    value = Math.min(Math.max(value + change, 1), maxStock);
+    quantityInput.value = value;
+    updateTotal();
+}
+
+function updateTotal() {
+    let qty = parseInt(quantityInput.value) || 1;
+    qty = Math.min(qty, maxStock);
+    quantityInput.value = qty;
+    totalPriceSpan.innerText = (price * qty).toFixed(2);
+}
+
+function togglePaymentFields() {
+    const paymentSelect = document.querySelector('select[name="payment_method"]');
+    const cardInfo = document.getElementById('card-info');
+    const gcashImage = document.getElementById('gcash-image');
+
+    if (paymentSelect.value === "Credit/Debit Card") {
+        cardInfo.style.display = 'block';
+        gcashImage.style.display = 'none';
+    } else if (paymentSelect.value === "GCash") {
+        cardInfo.style.display = 'none';
+        gcashImage.style.display = 'block';
+    } else {
+        cardInfo.style.display = 'none';
+        gcashImage.style.display = 'none';
+    }
+}
+
+function formatCardNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    value = value.substring(0, 16);
+    const parts = [];
+    for (let i = 0; i < value.length; i += 4) {
+        parts.push(value.substring(i, i + 4));
+    }
+    input.value = parts.join('-');
+}
+
+function validateForm() {
+    const paymentMethod = document.querySelector('select[name="payment_method"]').value;
+    if (paymentMethod === "Credit/Debit Card") {
+        const name = document.querySelector('input[name="name_on_card"]').value.trim();
+        const number = document.querySelector('input[name="card_number"]').value.trim();
+        if (!name || !number) {
+            alert("Please fill in your card name and card number for Credit/Debit Card payment.");
+            return false;
+        }
+    }
+    return true;
+}
+</script>
+{% endblock %}

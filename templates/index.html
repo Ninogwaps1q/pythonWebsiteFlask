@@ -31,22 +31,19 @@
                     <p class="stock">Stock: {{ product.stock }}</p>
                 </div>
             </a>
-
             {% if g.user and not g.is_admin %}
-                <div class="product-actions">
-                    {% if product.stock > 0 %}
-                        <form method="POST" action="{{ url_for('add_to_cart', product_id=product.product_id) }}">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="cart-btn">🛒 Cart</button>
-                        </form>
-                        <form method="POST" action="{{ url_for('buy_now', product_id=product.product_id) }}">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="buy-btn">💳 Buy</button>
-                        </form>
-                    {% else %}
-                        <button disabled class="out-of-stock-btn">Out of Stock</button>
-                    {% endif %}
-                </div>
+            <div class="product-actions">
+                {% if product.stock > 0 %}
+                    <form method="POST" action="{{ url_for('add_to_cart', product_id=product.product_id) }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="cart-btn">🛒 Cart</button>
+                    </form>
+
+                    <a href="{{ url_for('buy_now_page', product_id=product.product_id) }}" class="buy-btn">💳 Buy Now</a>
+                {% else %}
+                    <button class="out-of-stock-btn" disabled>Out of Stock</button>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
         {% else %}

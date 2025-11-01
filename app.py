@@ -13,7 +13,6 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not API_KEY:
     raise ValueError("Messing api key in .env file")
-
     
     genai.configure(api_key="AIzaSyBDlPAFKwK7D3x7g99r0emxNjbqm1m1INY")
     
@@ -37,6 +36,7 @@ class User(db.Model):
     firstname = db.Column(db.String(150), nullable=False)
     lastname = db.Column(db.String(150), nullable=False)
     contact = db.Column(db.String(150), nullable=False)
+    address = db.Column(db.String(255), nullable=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -56,6 +56,18 @@ class Product(db.Model):
     
     orders = db.relationship('Order', back_populates='product', cascade="all, delete-orphan")
     
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    payment_id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
+    payment_method = db.Column(db.String(100), nullable=False)
+    card_number = db.Column(db.String(20), nullable=True)
+    name_on_card = db.Column(db.String(100), nullable=True)
+    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='Pending')
+
+    order = db.relationship('Order', back_populates='payment')
+
 class Order(db.Model):
     __tablename__ = 'orders'
     order_id = db.Column(db.Integer, primary_key=True)
@@ -64,9 +76,11 @@ class Order(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     order_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    delivery_address = db.Column(db.String(255), nullable=True)
 
     user = db.relationship('User', back_populates='orders')
     product = db.relationship('Product', back_populates='orders')
+    payment = db.relationship('Payment', back_populates='order', uselist=False)
     
 def init_db():
     with app.app_context():
@@ -198,15 +212,12 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        firstname = request.form.get('firstname', '').strip()
-        lastname = request.form.get('lastname', '').strip()
-        contact = request.form.get('contact', '').strip()
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         error = None
         
-        if not username or not firstname or not lastname or not contact:
+        if not username:
             error = 'All personal fields are required.'
         elif not email:
             error = 'Email is required.'
@@ -217,9 +228,9 @@ def register():
             try:
                 hashed_password = generate_password_hash(password)
                 user = User(
-                    firstname = firstname,
-                    lastname = lastname,
-                    contact = contact,
+                    firstname = '',
+                    lastname = '',
+                    contact = '',
                     username = username,
                     email = email,
                     password = hashed_password,
@@ -296,6 +307,10 @@ def contact():
 def about_page():
     return render_template('about.html')
 
+def user_info_incomplete(user):
+    """Check if required user info fields are missing."""
+    return not (user.firstname and user.lastname and user.contact and user.address)
+
 @app.route("/buy_now/<int:product_id>", methods=["POST"])
 @login_required
 def buy_now(product_id):
@@ -303,34 +318,65 @@ def buy_now(product_id):
     if not product:
         flash("Product not found.", "danger")
         return redirect(url_for("index"))
-    if product.stock <= 0:
-        flash("Sorry, this product is out of stock.", "danger")
-        return redirect(url_for("index"))
 
-    user_id = session["user_id"]
-    quantity = 1
+    user = User.query.get(session["user_id"])
+    if user_info_incomplete(user):
+        flash("Please complete your profile (firstname, lastname, contact, and address).", "warning")
+        return redirect(url_for("edit_profile"))
+
+    try:
+        quantity = int(request.form.get("quantity", 1))
+    except ValueError:
+        quantity = 1
+    quantity = max(1, min(quantity, product.stock))
+
+    delivery_address = request.form.get("delivery_address", user.address)
+    payment_method = request.form.get("payment_method", "Cash on Delivery")
+    name_on_card = request.form.get("name_on_card", None)
+    card_number = request.form.get("card_number", None)
+
+    if product.stock < quantity:
+        flash(f"Only {product.stock} item(s) left in stock.", "warning")
+        return redirect(url_for("buy_now_page", product_id=product_id))
+
     total_price = product.price * quantity
-    order_date = datetime.now()
 
     try:
         order = Order(
-            user_id=user_id,
+            user_id=user.id,
             product_id=product.product_id,
             quantity=quantity,
             total_price=total_price,
-            order_date=order_date
+            order_date=datetime.utcnow(),
+            delivery_address=delivery_address
         )
-        product.stock = product.stock - quantity
+        product.stock -= quantity
         db.session.add(order)
+        db.session.flush()
+
+        if payment_method in ["Credit/Debit Card", "GCash"]:
+            payment_status = "Paid"
+        else:
+            payment_status = "Pending"
+
+        payment = Payment(
+            order_id=order.order_id,
+            payment_method=payment_method,
+            name_on_card=name_on_card if payment_method == "Credit/Debit Card" else None,
+            card_number=card_number if payment_method == "Credit/Debit Card" else None,
+            status=payment_status
+        )
+        db.session.add(payment)
         db.session.commit()
-        flash(f"You successfully bought {product.product_name} for ₱{product.price:.2f}.", "success")
+
+        flash(f"Successfully bought {quantity} × {product.product_name} for ₱{total_price:.2f}", "success")
         return redirect(url_for("order_history"))
     except Exception as e:
         db.session.rollback()
         flash(f"Error processing purchase: {e}", "danger")
-        return redirect(url_for("index"))
-
-
+        return redirect(url_for("buy_now_page", product_id=product_id))
+    
+    
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
@@ -389,14 +435,26 @@ def update_cart(product_id):
 @app.route('/place_order', methods=['POST'])
 @login_required
 def place_order():
+    user = User.query.get(session['user_id'])
+    if user_info_incomplete(user):
+        flash("Please complete your profile before ordering.", "warning")
+        return redirect(url_for("edit_profile"))
+
     cart_items = session.get('cart', {})
     if not cart_items:
-        flash('Your cart is empty. Cannot place an order.', 'warning')
+        flash('Your cart is empty.', 'warning')
         return redirect(url_for('cart'))
 
-    user_id = session['user_id']
-    total_order_price = 0
+    delivery_address = request.form.get('delivery_address', '').strip()
+    payment_method = request.form.get('payment_method', '').strip()
+    name_on_card = request.form.get('name_on_card', '').strip()
+    card_number = request.form.get('card_number', '').strip()
 
+    if not delivery_address or not payment_method:
+        flash("Please fill in all checkout details.", "danger")
+        return redirect(url_for('checkout'))
+
+    total_order_price = 0
     try:
         for pid_str, quantity in cart_items.items():
             product = Product.query.get(int(pid_str))
@@ -410,34 +468,35 @@ def place_order():
             total_order_price += subtotal
 
             order = Order(
-                user_id=user_id,
+                user_id=user.id,
                 product_id=product.product_id,
                 quantity=quantity,
                 total_price=subtotal,
-                order_date=datetime.utcnow()
+                delivery_address=delivery_address
             )
-            product.stock -= quantity
             db.session.add(order)
+            db.session.flush()
+
+            payment = Payment(
+                order_id=order.order_id,
+                payment_method=payment_method,
+                name_on_card=name_on_card if payment_method == "Credit/Debit Card" else None,
+                card_number=card_number if payment_method == "Credit/Debit Card" else None,
+                status="Paid" if payment_method != "Cash on Delivery" else "Pending"
+            )
+            db.session.add(payment)
+
+            product.stock -= quantity
 
         db.session.commit()
         session['cart'] = {}
         flash(f'Order placed successfully! Total: ₱{total_order_price:.2f}', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('order_history'))
 
     except Exception as e:
         db.session.rollback()
         flash(f'Error placing order: {str(e)}', 'danger')
-        return redirect(url_for('cart'))
-    
-
-@app.route('/checkout')
-@login_required
-def checkout():
-    cart_items = session.get('cart', {})
-    if not cart_items:
-        flash('Your cart is empty!', 'warning')
-        return redirect(url_for('index'))
-    return redirect(url_for('cart'))
+        return redirect(url_for('checkout'))
 
 
 @app.route('/order_history')
@@ -472,6 +531,7 @@ def edit_profile():
         firstname = request.form.get('firstname', '').strip()
         lastname = request.form.get('lastname', '').strip()
         contact = request.form.get('contact', '').strip()
+        address = request.form.get('address', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
         image_file = request.files.get('profile_image')
@@ -502,6 +562,7 @@ def edit_profile():
                 user.firstname = firstname
                 user.lastname = lastname
                 user.contact = contact
+                user.address = address
                 user.email = email
                 user.profile_pic = current_image
                 if password:
@@ -517,7 +578,14 @@ def edit_profile():
 
     return render_template('edit_profile.html', user=user)
 
-
+@app.route("/buy_now_page/<int:product_id>")
+@login_required
+def buy_now_page(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        flash("Product not found.", "danger")
+        return redirect(url_for("index"))
+    return render_template("buy_now_page.html", product=product)
 
 @app.route('/admin')
 @admin_required
@@ -652,6 +720,98 @@ def view_all_orders():
     orders = Order.query.order_by(Order.order_date.desc()).all()
 
     return render_template('admin/all_orders.html', orders=orders)
+
+@app.route('/cart_count')
+def cart_count():
+    cart = session.get('cart', {})
+    count = sum(cart.values())
+    return jsonify({'count': count})
+
+@app.route("/checkout", methods=["GET", "POST"])
+@login_required
+def checkout():
+    user = User.query.get(session['user_id'])
+    cart_items = session.get('cart', {})
+    if not cart_items:
+        flash("Your cart is empty!", "warning")
+        return redirect(url_for('cart'))
+
+    products = {}
+    total = 0.0
+    for pid_str, quantity in cart_items.items():
+        product = Product.query.get(int(pid_str))
+        if product:
+            subtotal = product.price * quantity
+            products[pid_str] = {
+                "name": product.product_name,
+                "price": product.price,
+                "quantity": quantity,
+                "subtotal": subtotal,
+                "image": product.image
+            }
+            total += subtotal
+
+    if request.method == "POST":
+        fullname = request.form.get("fullname", "").strip()
+        address = request.form.get("address", "").strip()
+        payment_method = request.form.get("payment", "").strip()
+        card_name = request.form.get("card_name", "").strip()
+        card_number = request.form.get("card_number", "").strip()
+
+        if not fullname or not address or not payment_method:
+            flash("Please complete all fields.", "danger")
+            return redirect(url_for("checkout"))
+
+        if payment_method == "Credit/Debit Card":
+            if not card_name or not card_number:
+                flash("Please enter your card details.", "danger")
+                return redirect(url_for("checkout"))
+
+        try:
+            for pid_str, item in products.items():
+                product = Product.query.get(int(pid_str))
+                if not product:
+                    continue
+
+                order = Order(
+                    user_id=user.id,
+                    product_id=product.product_id,
+                    quantity=item['quantity'],
+                    total_price=item['subtotal'],
+                    order_date=datetime.utcnow(),
+                    delivery_address=address
+                )
+                product.stock -= item['quantity']
+                db.session.add(order)
+                db.session.flush()
+
+                if payment_method == "Credit/Debit Card":
+                    status = "Paid"
+                elif payment_method == "GCash":
+                    status = "Paid"
+                else:
+                    status = "Pending"
+
+                payment = Payment(
+                    order_id=order.order_id,
+                    payment_method=payment_method,
+                    name_on_card=card_name if payment_method == "Credit/Debit Card" else None,
+                    card_number=card_number if payment_method == "Credit/Debit Card" else None,
+                    status=status
+                )
+                db.session.add(payment)
+
+            db.session.commit()
+            session['cart'] = {}
+            flash(f"Order placed successfully! Total: ₱{total:.2f}", "success")
+            return redirect(url_for("order_history"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error placing order: {e}", "danger")
+            return redirect(url_for("checkout"))
+
+    return render_template("checkout.html", cart=products, total=total, user=user)
 
 if __name__ == '__main__':
     init_db()

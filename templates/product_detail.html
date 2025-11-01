@@ -31,11 +31,7 @@
                         </button>
                     </form>
 
-                    <form method="POST" action="{{ url_for('buy_now', product_id=product.product_id) }}">
-                        <button type="submit" class="btn-buy">
-                            💳 Buy Now
-                        </button>
-                    </form>
+                    <a href="{{ url_for('buy_now_page', product_id=product.product_id) }}" class="buy-btn">💳 Buy Now</a>
                 </div>
             </div>
             {% else %}

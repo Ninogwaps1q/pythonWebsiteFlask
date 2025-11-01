@@ -31,3 +31,27 @@ function addMessage(text, type) {
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
 };
+
+// === CART COUNT UPDATER ===
+async function updateCartCount() {
+  try {
+    const response = await fetch('/cart_count');
+    const data = await response.json();
+    const cartCount = document.getElementById('cart-count');
+    if (cartCount) {
+      cartCount.textContent = data.count;
+    }
+  } catch (err) {
+    console.error("Error updating cart count:", err);
+  }
+}
+
+// Call when page loads
+document.addEventListener('DOMContentLoaded', updateCartCount);
+
+// Optional: Automatically refresh count after adding to cart
+document.addEventListener('submit', function (e) {
+  if (e.target.action.includes('/add_to_cart')) {
+    setTimeout(updateCartCount, 500); // update count after adding
+  }
+});

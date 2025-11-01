@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <h2 class="page-title">My Purchases</h2>
 
 {% if orders %}
@@ -10,7 +9,7 @@
     <div class="order-card">
         <div class="order-header">
             <span class="order-id">Order #{{ order.order_id }}</span>
-            <span class="order-date">{{ order.order_date }}</span>
+            <span class="order-date">{{ order.order_date.strftime('%B %d, %Y %I:%M %p') }}</span>
         </div>
 
         <div class="order-content">
@@ -20,15 +19,19 @@
             <div class="order-details">
                 <p class="order-product-name">{{ order.product_name }}</p>
                 <p class="order-quantity">Quantity: {{ order.quantity }}</p>
-            </div>
-
-            <div class="order-price">
-                <p>₱{{ '%.2f' | format(order.total_price) }}</p>
+                <p class="order-price">₱{{ '%.2f' | format(order.total_price) }}</p>
             </div>
         </div>
 
+        <div class="order-customer-info">
+            <h4>Delivery Information</h4>
+            <p><strong>Name:</strong> {{ g.user.firstname }} {{ g.user.lastname }}</p>
+            <p><strong>Contact:</strong> {{ g.user.contact }}</p>
+            <p><strong>Address:</strong> {{ g.user.address or 'No address provided' }}</p>
+        </div>
+
         <div class="order-footer">
-            <span>Thank you for shopping with <strong>Melynal Trading</strong>!</span>
+            <span>Thank you for shopping with <strong>Melyñal Trading</strong>!</span>
         </div>
     </div>
     {% endfor %}

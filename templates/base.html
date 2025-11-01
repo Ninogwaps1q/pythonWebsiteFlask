@@ -24,7 +24,11 @@
                         <li class="logout"><a href="{{ url_for('logout') }}">Logout ({{ g.user.username }})</a></li>
                     {% else %}
                         <li><a href="{{ url_for('index') }}">Home</a></li>
-                        <li><a href="{{ url_for('cart') }}">Cart</a></li> 
+                        <li>
+                            <a href="{{ url_for('cart') }}" id="cart-link">
+                                Cart <span id="cart-count" class="cart-count">{{ session['cart']|length if session.get('cart') else 0 }}</span>
+                            </a>
+                        </li>
                         <li><a href="{{ url_for('order_history') }}">Orders</a></li>
                         <li><a href="{{ url_for('contact') }}">Contact</a></li>
                         <li><a href="{{ url_for('profile') }}">Profile</a></li>

@@ -724,8 +724,8 @@ def view_all_orders():
 @app.route('/cart_count')
 def cart_count():
     cart = session.get('cart', {})
-    count = sum(cart.values())
-    return jsonify({'count': count})
+    total_unique_products = len(cart)
+    return jsonify({'count': total_unique_products})
 
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required

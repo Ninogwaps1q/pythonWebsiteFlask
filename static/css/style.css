@@ -2443,10 +2443,10 @@ textarea {
     box-shadow: 0 6px 15px rgba(209, 29, 97, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .checkout-section {
         padding: 20px;
         margin: 30px 15px;
     }
 }
+

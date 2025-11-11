@@ -2,20 +2,17 @@
 
 {% block content %}
 <div class="product-detail-card">
-    <!-- Left: Product Image -->
     <div class="product-image">
         <img src="{{ url_for('static', filename='uploads/' + (product.image or 'default.jpg')) }}" 
              alt="{{ product.product_name }}">
     </div>
 
-    <!-- Right: Product Info -->
     <div class="product-info">
         <h2 class="product-title">{{ product.product_name }}</h2>
         <p class="price">₱{{ '%.2f' | format(product.price) }}</p>
         <p><strong>Description:</strong> {{ product.description or 'No description provided.' }}</p>
         <p><strong>Stock:</strong> {{ product.stock }}</p>
 
-        <!-- 👇 Shopee-style action buttons -->
         {% if g.user and not g.is_admin %}
             {% if product.stock > 0 %}
             <div class="action-section">
